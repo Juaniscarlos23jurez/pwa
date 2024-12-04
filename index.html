@@ -87,10 +87,15 @@
       productContainer.innerHTML = ""; // Limpiar contenedor
   
     if (products) {
-  // Crear tabla
-  const table = document.createElement("table");
-  table.className = "table table-striped table-bordered";
-  
+   // Crear contenedor responsivo
+   const tableWrapper = document.createElement("div");
+    tableWrapper.className = "table-responsive";
+
+    // Crear tabla
+    const table = document.createElement("table");
+    table.className = "table table-striped table-bordered";
+
+    // Crear encabezado de tabla
   // Crear encabezado de tabla
   const thead = document.createElement("thead");
   thead.innerHTML = `
@@ -126,11 +131,11 @@
   });
 
   table.appendChild(tbody);
-  productContainer.innerHTML = ""; // Limpiar el contenedor antes de agregar la tabla
-  productContainer.appendChild(table);
-} else {
-  productContainer.innerHTML = "<p>No hay productos disponibles.</p>";
-}
+    tableWrapper.appendChild(table); // Agregar tabla al contenedor responsivo
+    productContainer.appendChild(tableWrapper); // Agregar contenedor a la página
+  } else {
+    productContainer.innerHTML = "<p>No hay productos disponibles.</p>";
+  }
 
     };
   
