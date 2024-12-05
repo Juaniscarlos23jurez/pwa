@@ -85,3 +85,10 @@ if (typeof workbox !== 'undefined') {
 } else {
   console.log('Workbox no está disponible.');
 }
+// Manejar notificaciones en background
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  event.waitUntil(
+      clients.openWindow('/') // Reemplaza con la URL que deseas abrir
+  );
+});
