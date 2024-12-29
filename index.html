@@ -5,29 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Registro de Ventas</title>
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-  <link rel="manifest" href="manifest.json">
-
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 </head>
 <body>
-  <nav class="navbar navbar-expand-lg navbar-light bg-light">
-    <a class="navbar-brand" href="#">Catálogo</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav">
-        <li class="nav-item active">
-          <a class="nav-link" href="#">Ventas</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="./gastos.html">Gasto</a>
-        </li>
-      </ul>
-    </div>
-  </nav>
-
+   
   <div class="container mt-4">
     <h1>Registro de Ventas</h1>
 
@@ -48,28 +30,10 @@
         <label for="precio">Precio</label>
         <input type="number" id="precio" class="form-control" required>
       </div>
-      <div class="form-group">
-        <label for="talla">Talla</label>
-        <select id="talla" class="form-control" required>
-          <option value="2">2</option>
-    <option value="3">3</option>
-    <option value="4">4</option>
-    <option value="5">5</option>
-    <option value="6">6</option>
-    <option value="7">7</option>
-    <option value="8">8</option>
-    <option value="9">9</option>
-    <option value="10">10</option>
-    <option value="11">11</option>
-    <option value="12">12</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label for="color">Color</label>
-        <input type="text" id="color" class="form-control" required>
-      </div>
-      <button type="submit" class="btn btn-primary">Guardar Venta</button>
-      <p>Total Venta: <span id="totalVenta">0</span> </p>
+      
+      
+      <button type="submit" class="btn btn-primary">Agregar Producto</button>
+      <p>Total Venta: $<span id="totalVenta">0</span></p>
     </form>
 
     <!-- Tabla de ventas -->
@@ -86,16 +50,17 @@
           </tr>
         </thead>
         <tbody id="ventasTable">
-          <!-- Las ventas se cargarán dinámicamente -->
         </tbody>
         <tfoot>
           <tr>
             <th colspan="5" class="text-right">Total General</th>
-            <th id="totalGeneral">0</th>
+            <th id="totalGeneral">$0</th>
           </tr>
         </tfoot>
       </table>
     </div>
+
+    <button id="finalizarVenta" class="btn btn-success">Finalizar Venta</button>
   </div>
 
   <script>
@@ -107,8 +72,7 @@
       projectId: "sisye-50760",
       storageBucket: "sisye-50760.appspot.com",
       messagingSenderId: "654720267764",
-      appId: "1:654720267764:web:4d9f302012a49dcc3bf5a1",
-      measurementId: "G-6RCT8Z9FTZ"
+      appId: "1:654720267764:web:4d9f302012a49dcc3bf5a1"
     };
 
     firebase.initializeApp(firebaseConfig);
@@ -118,9 +82,9 @@
     const totalGeneral = document.getElementById('totalGeneral');
     const ventaForm = document.getElementById('ventaForm');
     const totalVenta = document.getElementById('totalVenta');
+    const finalizarVenta = document.getElementById('finalizarVenta');
 
     let ventas = [];
-    let ventasFirebase = new Set(); // Usamos un Set para evitar duplicados
 
     // Calcular el total de la venta
     const calcularTotalVenta = () => {
@@ -148,13 +112,13 @@
         ventasTable.appendChild(row);
         total += ventaTotal;
       });
-      totalGeneral.textContent = total.toFixed(2);
+      totalGeneral.textContent = `$${total.toFixed(2)}`;
     };
 
-    // Guardar venta en el arreglo de ventas y en Firebase
+    // Guardar venta en el arreglo de ventas
     const saveVenta = (venta) => {
       ventas.push(venta);
-      const ventasRef = database.ref('Ventas');
+      const ventasRef = database.ref('/pymesA/ZdIOexlMi6fk7pi87eyHrqY824r2/ventas');
       ventasRef.push().set(venta);
       renderVentas();
     };
@@ -162,54 +126,36 @@
     // Manejar el formulario de venta
     ventaForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      
+
       const producto = document.getElementById('producto').value;
-      const cantidad = document.getElementById('cantidad').value;
-      const precio = document.getElementById('precio').value;
+      const cantidad = parseInt(document.getElementById('cantidad').value);
+      const precio = parseFloat(document.getElementById('precio').value);
       const talla = document.getElementById('talla').value;
       const color = document.getElementById('color').value;
 
-      const venta = {
-        id: new Date().toISOString(),
-        producto,
-        cantidad,
-        precio,
-        talla,
-        color
-      };
-
+      const venta = { producto, cantidad, precio, talla, color };
       saveVenta(venta);
       ventaForm.reset();
-      calcularTotalVenta();
+      totalVenta.textContent = '0';
     });
 
-    // Cargar ventas desde Firebase y evitar duplicados
-    database.ref('Ventas').on('child_added', snapshot => {
-      const venta = snapshot.val();
-      if (!ventasFirebase.has(venta.id)) {
-        ventas.push(venta);
-        ventasFirebase.add(venta.id);
-        renderVentas();
+    // Finalizar venta
+    finalizarVenta.addEventListener('click', () => {
+      if (ventas.length === 0) {
+        alert('No hay productos en la venta');
+        return;
       }
+
+      const ventasRef = database.ref('Ventas');
+      ventasRef.set(ventas).then(() => {
+        alert('Venta finalizada y guardada correctamente');
+        ventas = [];
+        renderVentas();
+      }).catch(error => {
+        console.error('Error al guardar la venta:', error);
+        alert('Error al finalizar la venta');
+      });
     });
-
-    // Calcular total cada vez que se cambia la cantidad o precio
-    document.getElementById('cantidad').addEventListener('input', calcularTotalVenta);
-    document.getElementById('precio').addEventListener('input', calcularTotalVenta);
-
-    // Mostrar alert si no hay conexión
-    window.addEventListener('offline', () => {
-      alert('No tienes conexión a Internet. Los datos no se guardarán hasta que vuelvas a estar en línea.');
-    });
-
-    window.addEventListener('online', () => {
-      alert('¡Conexión restaurada! Ahora puedes guardar los datos.');
-    });
-
-    // Inicializar la carga de ventas
-    renderVentas();
   </script>
-        <script  src="app.js"></script>
-
 </body>
 </html>
