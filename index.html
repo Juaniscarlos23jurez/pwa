@@ -44,8 +44,6 @@
             <th>Producto</th>
             <th>Cantidad</th>
             <th>Precio</th>
-            <th>Talla</th>
-            <th>Color</th>
             <th>Total</th>
           </tr>
         </thead>
@@ -53,7 +51,7 @@
         </tbody>
         <tfoot>
           <tr>
-            <th colspan="5" class="text-right">Total General</th>
+            <th colspan="3" class="text-right">Total General</th>
             <th id="totalGeneral">$0</th>
           </tr>
         </tfoot>
@@ -105,8 +103,6 @@
           <td>${venta.producto}</td>
           <td>${venta.cantidad}</td>
           <td>${venta.precio}</td>
-          <td>${venta.talla}</td>
-          <td>${venta.color}</td>
           <td>${ventaTotal.toFixed(2)}</td>
         `;
         ventasTable.appendChild(row);
@@ -115,11 +111,13 @@
       totalGeneral.textContent = `$${total.toFixed(2)}`;
     };
 
-    // Guardar venta en el arreglo de ventas
+    // Guardar venta en el arreglo de ventas y Firebase con fecha
     const saveVenta = (venta) => {
-      ventas.push(venta);
-      const ventasRef = database.ref('/pymesA/ZdIOexlMi6fk7pi87eyHrqY824r2/ventas');
-      ventasRef.push().set(venta);
+      const fecha = new Date().toLocaleString();
+      const ventaConFecha = { ...venta, fecha };
+      ventas.push(ventaConFecha);
+      const ventasRef = database.ref('/ventas');
+      ventasRef.push().set(ventaConFecha);
       renderVentas();
     };
 
@@ -130,81 +128,62 @@
       const producto = document.getElementById('producto').value;
       const cantidad = parseInt(document.getElementById('cantidad').value);
       const precio = parseFloat(document.getElementById('precio').value);
-      const talla = document.getElementById('talla').value;
-      const color = document.getElementById('color').value;
 
-      const venta = { producto, cantidad, precio, talla, color };
+      const venta = { producto, cantidad, precio };
       saveVenta(venta);
       ventaForm.reset();
       totalVenta.textContent = '0';
     });
 
-    // Imprimir ticket
-    const imprimirTicket = () => {
-      let ticketContent = `
-        <h2>Ticket de Venta</h2>
-        <table border="1" style="width: 100%; text-align: left; border-collapse: collapse;">
-          <thead>
-            <tr>
-              <th>Producto</th>
-              <th>Cantidad</th>
-              <th>Precio</th>
-              <th>Total</th>
-            </tr>
-          </thead>
-          <tbody>
-      `;
-      let totalVenta = 0;
-      ventas.forEach(venta => {
-        const ventaTotal = venta.cantidad * venta.precio;
-        ticketContent += `
-          <tr>
-            <td>${venta.producto}</td>
-            <td>${venta.cantidad}</td>
-            <td>$${venta.precio}</td>
-            <td>$${ventaTotal.toFixed(2)}</td>
-          </tr>
-        `;
-        totalVenta += ventaTotal;
-      });
-
-      ticketContent += `
-        </tbody>
-        <tfoot>
-          <tr>
-            <th colspan="3">Total</th>
-            <th>$${totalVenta.toFixed(2)}</th>
-          </tr>
-        </tfoot>
-      </table>
-      `;
-
-      // Crear un nuevo documento para impresión
-      const printWindow = window.open('', '', 'height=600,width=800');
-      printWindow.document.write(ticketContent);
-      printWindow.document.close();
-      printWindow.print();
-    };
-
-    // Finalizar venta
+    // Finalizar venta e imprimir el ticket
     finalizarVenta.addEventListener('click', () => {
       if (ventas.length === 0) {
         alert('No hay productos en la venta');
         return;
       }
 
+      // Guardar las ventas y mostrar un mensaje
       const ventasRef = database.ref('Ventas');
       ventasRef.set(ventas).then(() => {
         alert('Venta finalizada y guardada correctamente');
         ventas = [];
         renderVentas();
-        imprimirTicket(); // Imprimir el ticket después de finalizar la venta
+        imprimirTicket();  // Llamar a la función de impresión
       }).catch(error => {
         console.error('Error al guardar la venta:', error);
         alert('Error al finalizar la venta');
       });
     });
+
+    // Función para imprimir el ticket
+    const imprimirTicket = () => {
+      let ticketContent = '<h3>Ticket de Venta</h3>';
+      ticketContent += '<table class="table">';
+      ticketContent += '<tr><th>Producto</th><th>Cantidad</th><th>Precio</th><th>Total</th></tr>';
+      
+      ventas.forEach(venta => {
+        const total = venta.cantidad * venta.precio;
+        ticketContent += `
+          <tr>
+            <td>${venta.producto}</td>
+            <td>${venta.cantidad}</td>
+            <td>${venta.precio}</td>
+            <td>${total.toFixed(2)}</td>
+          </tr>
+        `;
+      });
+
+      ticketContent += `<tr><td colspan="3" class="text-right">Total General</td><td>${totalGeneral.textContent}</td></tr>`;
+      ticketContent += '</table>';
+      ticketContent += `<p><strong>Fecha:</strong> ${new Date().toLocaleString()}</p>`;
+      
+      const printWindow = window.open('', '', 'height=600,width=800');
+      printWindow.document.write('<html><head><title>Ticket de Venta</title></head><body>');
+      printWindow.document.write(ticketContent);
+      printWindow.document.write('</body></html>');
+      printWindow.document.close();
+      printWindow.print();
+    };
   </script>
 </body>
 </html>
-
